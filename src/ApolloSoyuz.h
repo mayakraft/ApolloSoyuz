@@ -11,6 +11,28 @@
 
 #define PORT 11999
 
+typedef enum
+{
+    AnimationStateNotStarted,
+    AnimationStateReadyForLaunch,
+    AnimationStateLaunching,
+    AnimationStateDockingAirlock,
+    AnimationStateOrbiting,
+    AnimationStateApproach,
+    AnimationStateVisit,
+    AnimationStateUndocking,
+    AnimationStateReEntry
+}
+AnimationState;
+
+typedef enum
+{
+    ProgramStateDisconnected,
+    ProgramStateWaiting,
+    ProgramStateRunning
+}
+ProgramState;
+
 #include <iostream>
 #include "ofMain.h"
 #include "ofxNetwork.h"
@@ -28,22 +50,29 @@ public:
     void setup(int role);
     void update();
     void draw();
+    void keyPressed(int key);
     
 private:
     ofxTCPServer server;
 	ofxTCPClient client;
     
-	std::string localIP;
-	std::string serverIP;
-    
     bool isClient = false;
     bool isServer = false;
+
     void updateTCP();
     void updateSlowTCP();
     int oneSecond; // track updateSlowTCP()
 
     void sendMessage(string message);   // if client, send to server.  if server, send to all clients
     string msgTx, msgRx;
+    char cMessage[128];
+    
+    ProgramState programState;
+    AnimationState animationState;
+    
+    long animationStartTime;
+    
+    void beginAnimation();
 
 };
 
