@@ -14,6 +14,7 @@
 typedef enum
 {
     AnimationStateNotStarted,
+    AnimationStateEnteringCapsule,
     AnimationStateReadyForLaunch,
     AnimationStateLaunching,
     AnimationStateDockingAirlock,
@@ -50,8 +51,20 @@ public:
     void setup(int role);
     void update();
     void draw();
+
+// desktop
     void keyPressed(int key);
+//    void keyReleased(int key);
+//    void windowResized(int w, int h);
+// desktop
     
+// mobile
+    void touchDown(ofTouchEventArgs & touch);
+//    void touchMoved(ofTouchEventArgs & touch);
+//    void touchUp(ofTouchEventArgs & touch);
+//    void touchDoubleTap(ofTouchEventArgs & touch);
+//    void touchCancelled(ofTouchEventArgs & touch);
+// mobile
 private:
     ofxTCPServer server;
 	ofxTCPClient client;
@@ -64,15 +77,23 @@ private:
     int oneSecond; // track updateSlowTCP()
 
     void sendMessage(string message);   // if client, send to server.  if server, send to all clients
-    string msgTx, msgRx;
+    string msgTx;
+    string msgRx;  // last message received
     char cMessage[128];
+    
+    // script
     
     ProgramState programState;
     AnimationState animationState;
     
     long animationStartTime;
+    long sceneBeginTime;
+    int role;
     
     void beginAnimation();
+    
+    // desktop only
+    bool fullScreen = false;
 
 };
 

@@ -8,22 +8,24 @@
 
 #include "ApolloSoyuz.h"
 
-void ApolloSoyuz::setup(int role){
-//	ofSetVerticalSync(true);
+void ApolloSoyuz::setup(int r){
+	ofSetVerticalSync(true);  // limits update() calls to 60/sec (?)
     
     programState = ProgramStateDisconnected;
     animationState = AnimationStateNotStarted;
     
-    if(role == 0){
+    role = r;
+    
+    if(role == 0){  // server is built into role. TODO- separate these
         server.setup(PORT);
         isServer = true;
         //optionally set the delimiter to something else.  The delimter in the client and the server have to be the same, default being [/TCP]
         server.setMessageDelimiter("\n");
     }
-    else{
+    else{  // client
         msgTx	= "";
         msgRx	= "";
-        if( client.setup("169.254.169.194", PORT) )
+        if( client.setup("169.254.254.27", PORT) )
             isClient = true;
         //optionally set the delimiter to something else.  The delimter in the client and the server have to be the same
         client.setMessageDelimiter("\n");
@@ -34,33 +36,42 @@ void ApolloSoyuz::setup(int role){
 void ApolloSoyuz::update(){
     updateTCP();
     
-    if(animationState == AnimationStateReadyForLaunch){
-        if(ofGetElapsedTimeMillis() > animationStartTime + 2000)
+    // TODO scene increment can iterate over AnimationStates programmatically, instead of long form
+    if(animationState == AnimationStateEnteringCapsule){
+        // transition by sendMessage "goForLaunch"
+    }
+    else if(animationState == AnimationStateReadyForLaunch){
+        if(ofGetElapsedTimeMillis() > sceneBeginTime + 4000){
             animationState = AnimationStateLaunching;
+            sceneBeginTime = ofGetElapsedTimeMillis();
+        }
     }
     else if(animationState == AnimationStateLaunching){
-        if(ofGetElapsedTimeMillis() > animationStartTime + 4000)
+        if(ofGetElapsedTimeMillis() > sceneBeginTime + 4000){
             animationState = AnimationStateDockingAirlock;
+            sceneBeginTime = ofGetElapsedTimeMillis();
+        }
     }
     else if(animationState == AnimationStateDockingAirlock){
-        if(ofGetElapsedTimeMillis() > animationStartTime + 6000)
-            animationState = AnimationStateOrbiting;
+        // transition by sendMessage "airlockDockingSuccessful"
     }
     else if(animationState == AnimationStateOrbiting){
-        if(ofGetElapsedTimeMillis() > animationStartTime + 8000)
+        if(ofGetElapsedTimeMillis() > sceneBeginTime + 4000){
             animationState = AnimationStateApproach;
+            sceneBeginTime = ofGetElapsedTimeMillis();
+        }
     }
     else if(animationState == AnimationStateApproach){
-        if(ofGetElapsedTimeMillis() > animationStartTime + 10000)
-            animationState = AnimationStateVisit;
+        // transition by sendMessage "soyuzDockingSuccessful"
     }
     else if(animationState == AnimationStateVisit){
-        if(ofGetElapsedTimeMillis() > animationStartTime + 12000)
-            animationState = AnimationStateUndocking;
+        // transition by sendMessage "undockAndReEntry"
     }
     else if (animationState == AnimationStateUndocking){
-        if(ofGetElapsedTimeMillis() > animationStartTime + 14000)
+        if(ofGetElapsedTimeMillis() > sceneBeginTime + 4000){
             animationState = AnimationStateReEntry;
+            sceneBeginTime = ofGetElapsedTimeMillis();
+        }
     }
     else if (animationState == AnimationStateReEntry){
     }
@@ -75,42 +86,18 @@ void ApolloSoyuz::draw(){
         ofClear(0, 255, 0);
     }
     
-	ofSetHexColor(0xDDDDDD);
-	ofDrawBitmapString("TCP SERVER Example \n\nconnect on port: "+ofToString(server.getPort()), 10, 20);
-    
-	ofSetHexColor(0x000000);
-	ofRect(10, 60, ofGetWidth()-24, ofGetHeight() - 65 - 15);
-    
-	ofSetHexColor(0xDDDDDD);
-    
-	//for each connected client lets get the data being sent and lets print it to the screen
-	for(unsigned int i = 0; i < (unsigned int)server.getLastID(); i++){
-        
-		if( !server.isClientConnected(i) )continue;
-        
-		//give each client its own color
-		ofSetColor(255 - i*30, 255 - i * 20, 100 + i*40);
-        
-		//calculate where to draw the text
-		int xPos = 15;
-		int yPos = 80 + (12 * i * 4);
-        
-		//get the ip and port of the client
-		string port = ofToString( server.getClientPort(i) );
-		string ip   = server.getClientIP(i);
-		string info = "client "+ofToString(i)+" -connected from "+ip+" on port: "+port;
-        
-		//we only want to update the text we have recieved there is data
-		string str = server.receive(i);
-        
-		//draw the info text and the received text bellow it
-		ofDrawBitmapString(info, xPos, yPos);
-		ofDrawBitmapString(str, 25, yPos + 20);
-        
-	}
-    
-    if(animationState == AnimationStateReadyForLaunch){
+    if(role == 2){
+        if(animationState == AnimationStateEnteringCapsule){
+            ofDrawBitmapString("Astronauts, are you GO for launch?", ofGetWidth()*.5, ofGetHeight()*.25);
+            ofDrawBitmapString("touch to confirm", ofGetWidth()*.5, ofGetHeight()*.33);
+        }
+    }
+
+    if(animationState == AnimationStateEnteringCapsule){
         ofDrawBitmapString("On the launch pad", ofGetWidth()*.5, ofGetHeight()*.5);
+    }
+    if(animationState == AnimationStateReadyForLaunch){
+        ofDrawBitmapString("ready for launch", ofGetWidth()*.5, ofGetHeight()*.5);
     }
     else if(animationState == AnimationStateLaunching){
         ofDrawBitmapString("LAUNCH!", ofGetWidth()*.5, ofGetHeight()*.5);
@@ -137,10 +124,31 @@ void ApolloSoyuz::draw(){
 }
 
 void ApolloSoyuz::keyPressed(int key){
-    printf("%d",key);
-    if(key == 103){
+    printf("%d\n",key);
+    if(key == 32){  // space bar starts animation
         if(isServer && animationState == AnimationStateNotStarted){
             beginAnimation();
+        }
+    }
+    if (key == 102 || key == 70){
+        fullScreen = !fullScreen;
+        ofSetFullscreen(fullScreen);
+    }
+}
+
+void ApolloSoyuz::touchDown(ofTouchEventArgs &touch){
+    if(role == 2){
+        if(animationState == AnimationStateEnteringCapsule){
+            sendMessage("goForLaunch");
+        }
+        if(animationState == AnimationStateDockingAirlock){
+            sendMessage("airlockDockingSuccessful");
+        }
+        if(animationState == AnimationStateApproach){
+            sendMessage("soyuzDockingSuccessful");
+        }
+        if(animationState == AnimationStateVisit){
+            sendMessage("undockAndReEntry");
         }
     }
 }
@@ -148,19 +156,10 @@ void ApolloSoyuz::keyPressed(int key){
 void ApolloSoyuz::beginAnimation(){
     sendMessage("animationBegin");
     animationStartTime = ofGetElapsedTimeMillis();
-    animationState = AnimationStateReadyForLaunch;
+    animationState = AnimationStateEnteringCapsule;
 }
 
-
 void ApolloSoyuz::updateTCP() {
-
-//    if(isServer){
-//        for(int i = 0; i < server.getLastID(); i++){
-//            if( !server.isClientConnected(i) )continue;
-//            
-//            server.send(i, "hello client - you are connected on port - "+ofToString(server.getClientPort(i)) );
-//        }
-//    }
 
 	if (isServer){
 	    for(int i = 0; i < server.getLastID(); i++) { // getLastID is UID of all clients
@@ -171,15 +170,28 @@ void ApolloSoyuz::updateTCP() {
                 //server.send(i, "You sent: "+str);
                 
                 if (str.length()){
+                    msgRx = str;
                 	strcpy( cMessage, str.c_str() );
                     ofLogNotice("TCP") << "Server Received (" + ofToString(i) + "):" + str;
-                    if (strcmp(cMessage, "command1") == 0){
+                    if (strcmp(cMessage, "goForLaunch") == 0){
+                        animationState = AnimationStateReadyForLaunch;
+                        sceneBeginTime = ofGetElapsedTimeMillis();
+                        sendMessage("goForLaunch");
                     }
-                    else if (strcmp(cMessage, "command2") == 0){
+                    else if (strcmp(cMessage, "airlockDockingSuccessful") == 0){
+                        animationState = AnimationStateOrbiting;
+                        sceneBeginTime = ofGetElapsedTimeMillis();
+                        sendMessage("airlockDockingSuccessful");
                     }
-                    else if (strcmp(cMessage, "command3") == 0) {
+                    else if (strcmp(cMessage, "soyuzDockingSuccessful") == 0) {
+                        animationState = AnimationStateVisit;
+                        sceneBeginTime = ofGetElapsedTimeMillis();
+                        sendMessage("soyuzDockingSuccessful");
                     }
-                    else if (strcmp(cMessage, "command4") == 0) {
+                    else if (strcmp(cMessage, "undockAndReEntry") == 0) {
+                        animationState = AnimationStateUndocking;
+                        sceneBeginTime = ofGetElapsedTimeMillis();
+                        sendMessage("undockAndReEntry");
                     }
                     else{
                     }
@@ -229,20 +241,31 @@ void ApolloSoyuz::updateTCP() {
         string str = client.receive();
         
         if (str.length()){
+            msgRx = str;
 	    	ofLogNotice("TCP") << "Received From Server: " + str;
             strcpy( cMessage, str.c_str() );
             if (strcmp(cMessage, "animationBegin") == 0) {
                 animationStartTime = ofGetElapsedTimeMillis();
+                animationState = AnimationStateEnteringCapsule;
+            }
+            else if (strcmp(cMessage, "goForLaunch") == 0) {
                 animationState = AnimationStateReadyForLaunch;
+                sceneBeginTime = ofGetElapsedTimeMillis();
             }
-            else if (strcmp(cMessage, "command2") == 0) {
+            else if (strcmp(cMessage, "airlockDockingSuccessful") == 0) {
+                animationState = AnimationStateOrbiting;
+                sceneBeginTime = ofGetElapsedTimeMillis();
             }
-            else if (strcmp(cMessage, "command3") == 0) {
+            else if (strcmp(cMessage, "soyuzDockingSuccessful") == 0) {
+                animationState = AnimationStateVisit;
+                sceneBeginTime = ofGetElapsedTimeMillis();
             }
-            else if (strcmp(cMessage, "command4") == 0) {
+            else if (strcmp(cMessage, "undockAndReEntry") == 0) {
+                animationState = AnimationStateUndocking;
+                sceneBeginTime = ofGetElapsedTimeMillis();
             }
             else {
-                //connectedAgents = ofToInt(str);
+                //connections = ofToInt(str);
             }
         }
     }
@@ -260,3 +283,5 @@ void ApolloSoyuz::sendMessage(string message){
 		client.send(message);
 	}
 }
+
+
