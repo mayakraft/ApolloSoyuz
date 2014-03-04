@@ -17,6 +17,7 @@ typedef enum
     AnimationStateEnteringCapsule,
     AnimationStateReadyForLaunch,
     AnimationStateLaunching,
+    AnimationStateSpinAfterLaunch,
     AnimationStateDockingAirlock,
     AnimationStateOrbiting,
     AnimationStateApproach,
@@ -65,6 +66,7 @@ public:
 //    void touchDoubleTap(ofTouchEventArgs & touch);
 //    void touchCancelled(ofTouchEventArgs & touch);
 // mobile
+    
 private:
     ofxTCPServer server;
 	ofxTCPClient client;
@@ -80,6 +82,18 @@ private:
     string msgTx;
     string msgRx;  // last message received
     char cMessage[128];
+    
+    // gfx
+    
+    ofCamera camera;
+    
+    ofTexture skyTexture;
+    ofTexture groundTexture;
+    ofTexture earthTexture;
+    ofTexture s4bTexture;
+    
+    ofTexture cloud1, cloud2, cloud3;
+    
     
     // script
     
