@@ -9,7 +9,7 @@
 #include "ApolloSoyuz.h"
 
 void ApolloSoyuz::setup(int r){
-//	ofSetVerticalSync(true);  // limits update() calls to 60/sec (?)
+    //	ofSetVerticalSync(true);  // limits update() calls to 60/sec (?)
     
     programState = ProgramStateDisconnected;
     animationState = AnimationStateNotStarted;
@@ -27,26 +27,30 @@ void ApolloSoyuz::setup(int r){
     else{  // client
         msgTx	= "";
         msgRx	= "";
-        if( client.setup("169.254.254.27", PORT) )
+        if( client.setup("169.254.101.145", PORT) )
             isClient = true;
         //optionally set the delimiter to something else.  The delimter in the client and the server have to be the same
         client.setMessageDelimiter("\n");
-        client.setVerbose(true);
     }
     
     // GRAPHICS
     
+    if(role == 2){
+        cylinder.set(50, 200, 10, 10);
+        cylinder.rotate(90, 1, 0, 0);
+    }
+    
     if(role == 0 || role == 1 || role == 4){
         
-//        ofEnableDepthTest();
-//        ofEnableAlphaBlending();
-
+        //        ofEnableDepthTest();
+        //        ofEnableAlphaBlending();
+        
         camera.setPosition(0.0f, 0.0f, 0.0f);
         if(role == 0)
             camera.lookAt(ofVec3f(0.0f, 0.0f, 10.0f));
         else if (role == 1)
             camera.lookAt(ofVec3f(0.0f, 0.0f, -10.0f));
-
+        
         skyTexture.setAnchorPercent(0.5, 0.5);
         
         ofLoadImage(cloud1, "cloud1.png");
@@ -55,34 +59,34 @@ void ApolloSoyuz::setup(int r){
         cloud2.setAnchorPercent(0.5, 0.5);
         ofLoadImage(cloud3, "cloud3.png");
         cloud3.setAnchorPercent(0.5, 0.5);
-
+        
         ofLoadImage(earthTexture, "earth.png");
         earthTexture.setAnchorPercent(0.5f, 0.5f);
         
         ofLoadImage(s4bTexture, "s4b.png");
         s4bTexture.setAnchorPercent(0.5f, 0.5f);
         
-//        cloudPlane.lookAt(ofVec3f(0.0f, 0.0f, 0.0f));
-//        cloudPlane.rotate(90, 0, 1, 0);
+        //        cloudPlane.lookAt(ofVec3f(0.0f, 0.0f, 0.0f));
+        //        cloudPlane.rotate(90, 0, 1, 0);
         
-//        glEnable(GL_CULL_FACE);
-//        glCullFace(GL_FRONT);
-
-//        ofDisableAlphaBlending();
+        //        glEnable(GL_CULL_FACE);
+        //        glCullFace(GL_FRONT);
+        
+        //        ofDisableAlphaBlending();
         
     }
 }
 
 void ApolloSoyuz::draw(){
     
-//    if(isServer){
-//        ofClear(0, 0, 255);
-//    }
-//    if(isClient){
-//        ofClear(0, 255, 0);
-//    }
+    //    if(isServer){
+    //        ofClear(0, 0, 255);
+    //    }
+    //    if(isClient){
+    //        ofClear(0, 255, 0);
+    //    }
     
-//    ofEnableNormalizedTexCoords();  // is this it?
+    //    ofEnableNormalizedTexCoords();  // is this it?
     
     if(role == 0 || role == 1 || role == 3){
         
@@ -109,7 +113,7 @@ void ApolloSoyuz::draw(){
         }
         
         ofSetColor(255, 255, 255, 255);
-
+        
         camera.begin();
         
         if(animationState == AnimationStateLaunching){
@@ -132,48 +136,108 @@ void ApolloSoyuz::draw(){
                     cloud2.draw(-15,  offset+100,  90,  50, 30);
                     cloud3.draw(5,  offset-33,  70,  50, 30);
                 }
-
+                
             }
         }
         
-        if(animationState == AnimationStateDockingAirlock){
-            long time = ofGetElapsedTimeMillis() - (sceneBeginTime + 2000);
-            if(time > 0){
-                float offset = time/250.0f;
+        if(animationState == AnimationStateSpinAfterLaunch){
+            long cue1 = ofGetElapsedTimeMillis() - (sceneBeginTime + 2000);
+            long cue2 = ofGetElapsedTimeMillis() - (sceneBeginTime + 20000);
+            if(cue1 > 0){
+                float offset = cue1/200.0f;
                 if(role==0){
                     ofPushMatrix();
                     ofRotate(-90, 0, 0, 1);
                     earthTexture.draw(0, offset-60, 30, 100, 100);
                     ofPushMatrix();
                     ofScale(-1, 1);
-                    ofRotate(offset/10.0, 0, 0, 1);
-                    s4bTexture.draw(0, offset-100, 25, 25, 25);
+                    //ofPushMatrix();
+                    //ofRotate(offset/10.0, 0, 0, 1);
+                    s4bTexture.draw(0, offset-70, 25, 25, 25);
+                    //ofPopMatrix();
                     ofPopMatrix();
                     ofPopMatrix();
                 }
-                if(role == 3){
+            }
+            if(cue2 > 0){
+                float offset = cue2/200.0f;
+                if(role == 1){
                     ofPushMatrix();
                     ofRotate(-90, 0, 0, 1);
-                    earthTexture.draw(0, offset-60-100, 30, 200, 200);
-            
+                    earthTexture.draw(0, offset-60, 30, 100, 100);
+                    ofPushMatrix();
+                    ofScale(-1, 1);
+                    //ofPushMatrix();
+                    //ofRotate(offset/10.0, 0, 0, 1);
+                    s4bTexture.draw(0, offset-70, 25, 25, 25);
+                    //ofPopMatrix();
+                    ofPopMatrix();
                     ofPopMatrix();
                 }
-                printf("%f\n",offset);
             }
         }
         
-//        cloud1.draw(0, 0, 20, 50, 30);
-
         camera.end();
-
+        
     }
     if(role == 2){
+        ofClear(0, 0, 0);
+        ofSetColor(255, 255, 255, 255);
+        ofSetLineWidth(1);
+        ofPushMatrix();
+        ofTranslate(ofGetWidth()*.5, ofGetHeight()*.5);
+        ofRotate(90, 0, 0, 1);
+        
+        
         if(animationState == AnimationStateEnteringCapsule){
             ofDrawBitmapString("Astronauts, are you GO for launch?", ofGetWidth()*.5, ofGetHeight()*.25);
             ofDrawBitmapString("touch to confirm", ofGetWidth()*.5, ofGetHeight()*.33);
         }
+        
+        if(animationState == AnimationStateDockingAirlock){
+            long cue1 = ofGetElapsedTimeMillis() - (sceneBeginTime + 2000);
+            const float STEP = .01;
+            if(cue1 < 0){
+                ofDrawBitmapString("PREPARE FOR S4B DOCKING",-20, 0);
+                ofDrawBitmapString("   TOUCH THE ARROWS    ", -20, 40);
+                position[0] = position[1] = position[2] = 0.0f;
+                acceleration[0] = acceleration[1] = acceleration[2] = 0.0f;
+                velocity[0] = -0.02f;
+                velocity[1] = 0.03f;
+                velocity[2] = 0.1f;
+            }
+            else if(cue1 > 0){
+                printf("%f\n",position[2]);
+                if(controlLeft) acceleration[0]=STEP;
+                else if(controlRight) acceleration[0]=-STEP;
+                else acceleration[0] = 0;
+                
+                if(controlUp) acceleration[1]=STEP;
+                else if(controlDown) acceleration[1]=-STEP;
+                else acceleration[1] = 0;
+                
+                if(controlForward) acceleration[2]=STEP;
+                else if(controlReverse) acceleration[2]=-STEP;
+                else acceleration[2] = 0;
+                velocity[0] += acceleration[0];
+                velocity[1] += acceleration[1];
+                velocity[2] += acceleration[2];
+                position[0] += velocity[0];
+                position[1] += velocity[1];
+                position[2] += velocity[2];
+                cylinder.setPosition(position[0], position[1], position[2]);
+                cylinder.drawWireframe();
+                ofDrawBitmapString("DISTANCE", -10, -200);
+                if(position[2] > 0)
+                    drawTimer(0, -150, 1.0-(700-position[2])/700.0);
+                //                if(cue1 < 15000)
+                //                    drawTimer(0, -150, cue1/15000.0f);
+            }
+        }
+        
+        ofPopMatrix();
     }
-
+    
     if(animationState == AnimationStateEnteringCapsule){
         ofDrawBitmapString("On the launch pad", ofGetWidth()*.5, ofGetHeight()*.5);
     }
@@ -204,16 +268,38 @@ void ApolloSoyuz::draw(){
     else if (animationState == AnimationStateReEntry){
         ofDrawBitmapString("Re-entry", ofGetWidth()*.5, ofGetHeight()*.5);
     }
-
+    
 }
+
+void ApolloSoyuz::drawTimer(int centerX, int centerY, float roundProgress){
+    ofFill();
+    ofBeginShape();
+    ofVertex(centerX,centerY);
+    static float outerRadius = 50;
+    static float resolution = 256;
+    static float deltaAngle = TWO_PI / resolution;
+    float angle = 0;
+    for(int i = 0; i <= resolution; i++){
+        if((float)i/resolution <= roundProgress){
+            float x = centerX + outerRadius * sin(angle);
+            float y = centerY + outerRadius * -cos(angle);
+            ofVertex(x,y);
+            angle += deltaAngle;
+        }
+    }
+    ofVertex(centerX,centerY);
+    ofEndShape();
+    ofNoFill();
+}
+
 
 void ApolloSoyuz::update(){
     updateTCP();
-//    float angle = ofGetElapsedTimeMillis()/1000.0;
-//    camera.lookAt(ofVec3f(cos(angle), 0.0f, sin(angle)));
-//    skySphere.rotate(angle*2, 0, 0, 1);
-//    
-//    cloudPlane.rotate(angle*2, 0, 1, 0);
+    //    float angle = ofGetElapsedTimeMillis()/1000.0;
+    //    camera.lookAt(ofVec3f(cos(angle), 0.0f, sin(angle)));
+    //    skySphere.rotate(angle*2, 0, 0, 1);
+    //
+    //    cloudPlane.rotate(angle*2, 0, 1, 0);
     
     // TODO scene increment can iterate over AnimationStates programmatically, instead of long form
     if(animationState == AnimationStateEnteringCapsule){
@@ -233,12 +319,13 @@ void ApolloSoyuz::update(){
     }
     else if(animationState == AnimationStateLaunching){
         if(ofGetElapsedTimeMillis() > sceneBeginTime + 10000){
-            animationState = AnimationStateDockingAirlock;
+            animationState = AnimationStateSpinAfterLaunch;
             sceneBeginTime = ofGetElapsedTimeMillis();
         }
     }
+    
     else if(animationState == AnimationStateSpinAfterLaunch){
-        if(ofGetElapsedTimeMillis() > sceneBeginTime + 12000){
+        if(ofGetElapsedTimeMillis() > sceneBeginTime + 4000){  // 40000
             animationState = AnimationStateDockingAirlock;
             sceneBeginTime = ofGetElapsedTimeMillis();
         }
@@ -283,11 +370,28 @@ void ApolloSoyuz::keyPressed(int key){
 
 void ApolloSoyuz::touchDown(ofTouchEventArgs &touch){
     if(role == 2){
+        const float maxX = 760.0f;
+        const float maxY = 1000.0f;
+        if(touch.x < 100 && touch.y > 100 && touch.y < maxY-100)
+            controlDown = true;
+        if(touch.x > maxX-100 && touch.y > 100 && touch.y < maxY-100)
+            controlUp = true;
+        if(touch.y < 100 && touch.x > 100 && touch.x < maxX-100)
+            controlLeft = true;
+        if(touch.y > maxY-100 && touch.x > 100 && touch.x < maxX-100)
+            controlRight = true;
+        if(touch.y > maxY-100 && touch.x < 100)
+            controlForward = true;
+        if(touch.y < 100 && touch.x < 100)
+            controlReverse = true;
+        
+        printf("up %d  down %d  left %d  right %d  forward %d  reverse %d\n",controlUp, controlDown, controlLeft, controlRight, controlForward, controlReverse);
+        
         if(animationState == AnimationStateEnteringCapsule){
             sendMessage("goForLaunch");
         }
         if(animationState == AnimationStateDockingAirlock){
-            sendMessage("airlockDockingSuccessful");
+            //            sendMessage("airlockDockingSuccessful");
         }
         if(animationState == AnimationStateApproach){
             sendMessage("soyuzDockingSuccessful");
@@ -298,6 +402,15 @@ void ApolloSoyuz::touchDown(ofTouchEventArgs &touch){
     }
 }
 
+void ApolloSoyuz::touchUp(ofTouchEventArgs &touch){
+    controlDown = false;
+    controlUp = false;
+    controlLeft = false;
+    controlRight = false;
+    controlForward = false;
+    controlReverse = false;
+}
+
 void ApolloSoyuz::beginAnimation(){
     sendMessage("animationBegin");
     animationStartTime = ofGetElapsedTimeMillis();
@@ -305,11 +418,11 @@ void ApolloSoyuz::beginAnimation(){
 }
 
 void ApolloSoyuz::updateTCP() {
-
+    
 	if (isServer){
 	    for(int i = 0; i < server.getLastID(); i++) { // getLastID is UID of all clients
             if( server.isClientConnected(i) ) { // check and see if it's still around
-
+                
                 // maybe the client is sending something
                 string str = server.receive(i);
                 //server.send(i, "You sent: "+str);
@@ -344,28 +457,29 @@ void ApolloSoyuz::updateTCP() {
             }
 	    }
 	}
-//    else if(isClient){
-//        if(client.send(msgTx)){
-//            
-//            //if data has been sent lets update our text
-//            string str = tcpClient.receive();
-//            if( str.length() > 0 ){
-//                msgRx = str;
-//            }
-//        }else if(!tcpClient.isConnected()){
-//            weConnected = false;
-//        }
-//    }else{
-//        //if we are not connected lets try and reconnect every 5 seconds
-//        deltaTime = ofGetElapsedTimeMillis() - connectTime;
-//        
-//        if( deltaTime > 5000 ){
-//            weConnected = tcpClient.setup("127.0.0.1", 11999);
-//            connectTime = ofGetElapsedTimeMillis();
-//        }
-//        
-//    }
-
+    
+    //    else if(isClient){
+    //        if(client.send(msgTx)){
+    //
+    //            //if data has been sent lets update our text
+    //            string str = tcpClient.receive();
+    //            if( str.length() > 0 ){
+    //                msgRx = str;
+    //            }
+    //        }else if(!tcpClient.isConnected()){
+    //            weConnected = false;
+    //        }
+    //    }else{
+    //        //if we are not connected lets try and reconnect every 5 seconds
+    //        deltaTime = ofGetElapsedTimeMillis() - connectTime;
+    //
+    //        if( deltaTime > 5000 ){
+    //            weConnected = tcpClient.setup("127.0.0.1", 11999);
+    //            connectTime = ofGetElapsedTimeMillis();
+    //        }
+    //
+    //    }
+    
     else if (isClient){
         
     	if (!client.isConnected()){
@@ -374,15 +488,15 @@ void ApolloSoyuz::updateTCP() {
     		programState = ProgramStateDisconnected;
     		return;
     	}
-//        else{
-//            //if we are not connected lets try and reconnect every 5 seconds
-//            deltaTime = ofGetElapsedTimeMillis() - connectTime;
-//            if( deltaTime > 5000 ){
-//                weConnected = tcpClient.setup("127.0.0.1", 11999);
-//                connectTime = ofGetElapsedTimeMillis();
-//            }
-//        }
-    
+        //        else{
+        //            //if we are not connected lets try and reconnect every 5 seconds
+        //            deltaTime = ofGetElapsedTimeMillis() - connectTime;
+        //            if( deltaTime > 5000 ){
+        //                weConnected = tcpClient.setup("127.0.0.1", 11999);
+        //                connectTime = ofGetElapsedTimeMillis();
+        //            }
+        //        }
+        
         string str = client.receive();
         
         if (str.length()){
