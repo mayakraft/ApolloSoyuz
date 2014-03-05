@@ -118,6 +118,11 @@ private:
     ofCylinderPrimitive cylinder;
     ofIcoSpherePrimitive icoSphere;
     void drawTimer(int centerX, int centerY, float roundProgress);
+    bool miniGameDocking1Complete;
+    int miniGameDocking1Score;
+    long miniGameCompletionTime;
+    
+    void drawControls();
     
 };
 
