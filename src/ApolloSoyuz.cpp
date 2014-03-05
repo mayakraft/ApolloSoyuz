@@ -42,8 +42,8 @@ void ApolloSoyuz::setup(int r){
     
     if(role == 0 || role == 1 || role == 4){
         
-        //        ofEnableDepthTest();
-        //        ofEnableAlphaBlending();
+//        ofEnableDepthTest();
+//        ofEnableAlphaBlending();
         
         camera.setPosition(0.0f, 0.0f, 0.0f);
         if(role == 0)
@@ -66,35 +66,68 @@ void ApolloSoyuz::setup(int r){
         ofLoadImage(s4bTexture, "s4b.png");
         s4bTexture.setAnchorPercent(0.5f, 0.5f);
         
-        //        cloudPlane.lookAt(ofVec3f(0.0f, 0.0f, 0.0f));
-        //        cloudPlane.rotate(90, 0, 1, 0);
+        ofLoadImage(soyuzTexture, "soyuz.png");
+        soyuzTexture.setAnchorPercent(0.5f, 0.5f);
         
-        //        glEnable(GL_CULL_FACE);
-        //        glCullFace(GL_FRONT);
+//        cloudPlane.lookAt(ofVec3f(0.0f, 0.0f, 0.0f));
+//        cloudPlane.rotate(90, 0, 1, 0);
         
-        //        ofDisableAlphaBlending();
+//        glEnable(GL_CULL_FACE);
+//        glCullFace(GL_FRONT);
+        
+//        ofDisableAlphaBlending();
         
     }
+    
+    
+    ///setup each time around
+    
+    failStage = 0;
     
 }
 
 void ApolloSoyuz::draw(){
     
-    //    if(isServer){
-    //        ofClear(0, 0, 255);
-    //    }
-    //    if(isClient){
-    //        ofClear(0, 255, 0);
-    //    }
+//    if(isServer){
+//        ofClear(0, 0, 255);
+//    }
+//    if(isClient){
+//        ofClear(0, 255, 0);
+//    }
     
-    //    ofEnableNormalizedTexCoords();  // is this it?
+//    ofEnableNormalizedTexCoords();  // is this it?
     
     if(role == 0 || role == 1 || role == 3){
         
         if(animationState == AnimationStateNotStarted ||
            animationState == AnimationStateEnteringCapsule ||
-           animationState == AnimationStateReadyForLaunch){
+           animationState == AnimationStateReadyForLaunch ||
+           animationState == AnimationStateSplashDown){
             ofClear(124, 160, 192);
+        }
+        else if(animationState == AnimationStateReEntry){
+            long time = ofGetElapsedTimeMillis() - sceneBeginTime;
+            float easeIn = time/8000.0f;
+            if(time > 8000)
+                easeIn = 1.0;
+            int rand = ofRandom(0, 255);
+            ofClear(255*easeIn, rand*easeIn, 0);
+        }
+        else if (animationState == AnimationStateAirFailure){
+            int rand = ofRandom(0, 255);
+            ofClear(255, rand, 0);
+        }
+        else if (animationState == AnimationStateSafeReEntry){
+            long time = ofGetElapsedTimeMillis() - sceneBeginTime;
+            float easeIn = time/8000.0f;
+            if(time > 8000)
+                easeIn = 1.0;
+            int rand = ofRandom(0, 255);
+            int r = 124*easeIn + 255 * (1-easeIn);
+            int g = 160*easeIn + rand * (1-easeIn);
+            int b = 192*easeIn;
+            ofClear(r, g, b);
+            
         }
         else if (animationState == AnimationStateLaunching){
             static int beginDarkening = 5000;
@@ -126,16 +159,16 @@ void ApolloSoyuz::draw(){
                     cloud2.draw(-10, offset-200, 100, 50, 30);
                     cloud3.draw(0,   offset    , 30,  50, 30);
                     cloud1.draw(20,  offset+66,  40,  50, 30);
-                    cloud2.draw(-15,  offset-66,  90,  50, 30);
+                    cloud2.draw(-15,  offset-66, 90,  50, 30);
                     cloud3.draw(5,  offset-100,  70,  50, 30);
                 }
                 if(role == 1){
                     cloud1.draw(10,  offset+200, 60,  50, 30);
-                    cloud2.draw(-10, offset-100, 30, 50, 30);
+                    cloud2.draw(-10, offset-100, 30,  50, 30);
                     cloud3.draw(0,   offset    , 100,  50, 30);
-                    cloud1.draw(20,  offset+66,  70,  50, 30);
-                    cloud2.draw(-15,  offset+100,  90,  50, 30);
-                    cloud3.draw(5,  offset-33,  70,  50, 30);
+                    cloud1.draw(20,  offset+66,  70,   50, 30);
+                    cloud2.draw(-15,  offset+100, 90,  50, 30);
+                    cloud3.draw(5,  offset-33,   70,  50, 30);
                 }
                 
             }
@@ -145,11 +178,11 @@ void ApolloSoyuz::draw(){
             long cue1 = ofGetElapsedTimeMillis() - (sceneBeginTime + 2000);
             long cue2 = ofGetElapsedTimeMillis() - (sceneBeginTime + 20000);
             if(cue1 > 0){
-                float offset = cue1/200.0f;
+                float offset = cue1/150.0f;
                 if(role==0){
                     ofPushMatrix();
                     ofRotate(-90, 0, 0, 1);
-                    earthTexture.draw(0, offset-60, 30, 100, 100);
+                    earthTexture.draw(0, offset-70, 30, 100, 100);
                     ofPushMatrix();
                     ofScale(-1, 1);
                     //ofPushMatrix();
@@ -161,11 +194,11 @@ void ApolloSoyuz::draw(){
                 }
             }
             if(cue2 > 0){
-                float offset = cue2/200.0f;
+                float offset = cue2/150.0f;
                 if(role == 1){
                     ofPushMatrix();
                     ofRotate(-90, 0, 0, 1);
-                    earthTexture.draw(0, offset-60, 30, 100, 100);
+                    earthTexture.draw(0, offset-70, 30, 100, 100);
                     ofPushMatrix();
                     ofScale(-1, 1);
                     //ofPushMatrix();
@@ -181,7 +214,11 @@ void ApolloSoyuz::draw(){
         if(animationState == AnimationStateOrbiting){
             static int soyuzApproachSpin = 0;
             long cue1 = ofGetElapsedTimeMillis() - (sceneBeginTime + 2000);
-//            long cue2 = ofGetElapsedTimeMillis() - (sceneBeginTime + 20000);
+            long cue2 = ofGetElapsedTimeMillis() - (sceneBeginTime + 10000);
+            long cue3 = ofGetElapsedTimeMillis() - (sceneBeginTime + 25000);
+            float cue3Offset = 0;
+            if(cue3 > 0)
+                cue3Offset = cue3/200.0f;
             if(cue1 > 0){
                 float offset;
                 if(cue1 < 5000)
@@ -191,16 +228,26 @@ void ApolloSoyuz::draw(){
                 if(role==0){
                     ofPushMatrix();
                     ofRotate(-90, 0, 0, 1);
-                    earthTexture.draw(0, offset-60, 30, 100, 100);
+                    earthTexture.draw(0, offset-70+cue3Offset, 30, 100, 100);
                     ofPushMatrix();
                     ofScale(-1, 1);
                     //ofPushMatrix();
                     //ofRotate(offset/10.0, 0, 0, 1);
-//                    s4bTexture.draw(0, offset-70, 25, 25, 25);
+                    //                    s4bTexture.draw(0, offset-70, 25, 25, 25);
                     //ofPopMatrix();
                     ofPopMatrix();
                     ofPopMatrix();
                 }
+            }
+            if(cue2 > 0){
+                float size = cue2/1000.0f;
+                ofPushMatrix();
+                ofScale(-1, 1);
+                ofPushMatrix();
+                //                ofScale(size, size);
+                soyuzTexture.draw(-cue3Offset*.25, 0, 30-size, .1+size/10.0, .1+size/10.0);
+                ofPopMatrix();
+                ofPopMatrix();
             }
 //            if(cue2 > 0){
 //                float offset = cue2/200.0f;
@@ -219,7 +266,14 @@ void ApolloSoyuz::draw(){
 //                }
 //            }
         }
-
+        
+        
+        if(animationState == AnimationStateUndocking){
+            
+        }
+        if(animationState == AnimationStateReEntry){
+            
+        }
         
         camera.end();
         
@@ -241,11 +295,13 @@ void ApolloSoyuz::draw(){
             
             drawControls();
             
-            long cue1 = ofGetElapsedTimeMillis() - (sceneBeginTime + 2000);
+            long cue1 = ofGetElapsedTimeMillis() - (sceneBeginTime + 4000);
+            long cue2 = ofGetElapsedTimeMillis() - (sceneBeginTime + 2000);
             const float STEP = .01;
             if(cue1 < 0){
                 ofDrawBitmapString("PREPARE FOR S4B DOCKING",-20, 0);
-                ofDrawBitmapString("   TOUCH THE ARROWS    ", -20, 40);
+                if(cue2 > 0)
+                    ofDrawBitmapString("   TOUCH THE ARROWS    ", -20, 40);
                 position[0] = position[1] = position[2] = 0.0f;
                 acceleration[0] = acceleration[1] = acceleration[2] = 0.0f;
                 velocity[0] = -0.02f;
@@ -276,11 +332,11 @@ void ApolloSoyuz::draw(){
                 }
                 cylinder.setPosition(position[0], position[1], position[2]);
                 cylinder.drawWireframe();
-                ofDrawBitmapString("DISTANCE", -10, -200);
+                ofDrawBitmapString("DISTANCE", -10, -250);
                 if(position[2] > 0)
                     drawTimer(0, -150, 1.0-(700-position[2])/700.0);
-                //                if(cue1 < 15000)
-                //                    drawTimer(0, -150, cue1/15000.0f);
+//                if(cue1 < 15000)
+//                    drawTimer(0, -150, cue1/15000.0f);
                 if(position[2] > 700 && !miniGameDocking1Complete){
                     miniGameDocking1Score = 100 - (fabs(position[0]) + fabs(position[1]));
                     if(miniGameDocking1Score < 0) miniGameDocking1Score = 0;
@@ -306,6 +362,161 @@ void ApolloSoyuz::draw(){
             }
         }
         
+        if(animationState == AnimationStateApproach){
+            
+            drawControls();
+            
+            long cue1 = ofGetElapsedTimeMillis() - (sceneBeginTime + 4000);
+            const float STEP = .01;
+            if(cue1 < 0){
+                ofDrawBitmapString("PREPARE FOR DOCKING",-20, 0);
+                ofDrawBitmapString(" TOUCH THE ARROWS  ", -20, 40);
+                position[0] = position[1] = position[2] = 0.0f;
+                acceleration[0] = acceleration[1] = acceleration[2] = 0.0f;
+                velocity[0] = -0.02f;
+                velocity[1] = 0.03f;
+                velocity[2] = 0.1f;
+                miniGameDocking1Complete = false;
+            }
+            else if(cue1 > 0 && !miniGameDocking1Complete){
+                printf("%f\n",position[2]);
+                if(controlLeft) acceleration[0]=STEP;
+                else if(controlRight) acceleration[0]=-STEP;
+                else acceleration[0] = 0;
+                
+                if(controlUp) acceleration[1]=STEP;
+                else if(controlDown) acceleration[1]=-STEP;
+                else acceleration[1] = 0;
+                
+                if(controlForward) acceleration[2]=STEP;
+                else if(controlReverse) acceleration[2]=-STEP;
+                else acceleration[2] = 0;
+                velocity[0] += acceleration[0];
+                velocity[1] += acceleration[1];
+                velocity[2] += acceleration[2];
+                if(!miniGameDocking1Complete){
+                    position[0] += velocity[0];
+                    position[1] += velocity[1];
+                    position[2] += velocity[2];
+                }
+                cylinder.setPosition(position[0], position[1], position[2]);
+                cylinder.drawWireframe();
+                ofDrawBitmapString("DISTANCE", -10, -250);
+                if(position[2] > 0)
+                    drawTimer(0, -150, 1.0-(700-position[2])/700.0);
+//                if(cue1 < 15000)
+//                    drawTimer(0, -150, cue1/15000.0f);
+                if(position[2] > 700 && !miniGameDocking1Complete){
+                    miniGameDocking1Score = 100 - (fabs(position[0]) + fabs(position[1]));
+                    if(miniGameDocking1Score < 0) miniGameDocking1Score = 0;
+                    miniGameCompletionTime = ofGetElapsedTimeMillis();
+                    miniGameDocking1Complete = true;
+                }
+            }
+            
+            if(miniGameDocking1Complete){
+                string scoreString = ofToString(miniGameDocking1Score);
+                if(ofGetElapsedTimeMillis() > miniGameCompletionTime ){
+                    ofDrawBitmapString("SUCCESS", -10, -100);
+                    ofDrawBitmapString(scoreString + " %", -2, 0);
+                }
+                if(ofGetElapsedTimeMillis() > miniGameCompletionTime + 3000){
+                    ofDrawBitmapString(" ", -50, 100);
+                    //                    ofDrawBitmapString("", ofGetWidth()*.5, ofGetHeight()*.6);
+                }
+                if(ofGetElapsedTimeMillis() > miniGameCompletionTime + 7000){
+                    sendMessage("soyuzDockingSuccessful");
+                    animationState = AnimationStateVisit;
+                }
+            }
+        }
+        
+        if(animationState == AnimationStateAirFailure){
+            
+//            drawControls();
+            
+            if(failStage == 0){
+                int flash = ofGetElapsedTimeMillis()/500.0;
+                if(flash % 2 == 0){
+                    ofClear(255, 0, 0);
+                }
+                else{
+                    ofClear(0, 0, 0);
+                }
+                ofDrawBitmapString("TOUCH", -5, 0);
+            }
+            else if(failStage == 1){
+//                sendMessage("airFailureRepaired");
+
+                drawPuzzle();
+                
+            }
+            
+//            long cue1 = ofGetElapsedTimeMillis() - (sceneBeginTime + 4000);
+//            const float STEP = .01;
+//            if(cue1 < 0){
+//                ofDrawBitmapString("PREPARE FOR DOCKING",-20, 0);
+//                ofDrawBitmapString(" TOUCH THE ARROWS  ", -20, 40);
+//                position[0] = position[1] = position[2] = 0.0f;
+//                acceleration[0] = acceleration[1] = acceleration[2] = 0.0f;
+//                velocity[0] = -0.02f;
+//                velocity[1] = 0.03f;
+//                velocity[2] = 0.1f;
+//                miniGameDocking1Complete = false;
+//            }
+//            else if(cue1 > 0 && !miniGameDocking1Complete){
+//                printf("%f\n",position[2]);
+//                if(controlLeft) acceleration[0]=STEP;
+//                else if(controlRight) acceleration[0]=-STEP;
+//                else acceleration[0] = 0;
+//                
+//                if(controlUp) acceleration[1]=STEP;
+//                else if(controlDown) acceleration[1]=-STEP;
+//                else acceleration[1] = 0;
+//                
+//                if(controlForward) acceleration[2]=STEP;
+//                else if(controlReverse) acceleration[2]=-STEP;
+//                else acceleration[2] = 0;
+//                velocity[0] += acceleration[0];
+//                velocity[1] += acceleration[1];
+//                velocity[2] += acceleration[2];
+//                if(!miniGameDocking1Complete){
+//                    position[0] += velocity[0];
+//                    position[1] += velocity[1];
+//                    position[2] += velocity[2];
+//                }
+//                cylinder.setPosition(position[0], position[1], position[2]);
+//                cylinder.drawWireframe();
+//                ofDrawBitmapString("DISTANCE", -10, -250);
+//                if(position[2] > 0)
+//                    drawTimer(0, -150, 1.0-(700-position[2])/700.0);
+////                if(cue1 < 15000)
+////                    drawTimer(0, -150, cue1/15000.0f);
+//                if(position[2] > 700 && !miniGameDocking1Complete){
+//                    miniGameDocking1Score = 100 - (fabs(position[0]) + fabs(position[1]));
+//                    if(miniGameDocking1Score < 0) miniGameDocking1Score = 0;
+//                    miniGameCompletionTime = ofGetElapsedTimeMillis();
+//                    miniGameDocking1Complete = true;
+//                }
+//            }
+//            
+//            if(miniGameDocking1Complete){
+//                string scoreString = ofToString(miniGameDocking1Score);
+//                if(ofGetElapsedTimeMillis() > miniGameCompletionTime ){
+//                    ofDrawBitmapString("SUCCESS", -10, -100);
+//                    ofDrawBitmapString(scoreString + " %", -2, 0);
+//                }
+//                if(ofGetElapsedTimeMillis() > miniGameCompletionTime + 3000){
+//                    ofDrawBitmapString(" ", -50, 100);
+////                    ofDrawBitmapString("", ofGetWidth()*.5, ofGetHeight()*.6);
+//                }
+//                if(ofGetElapsedTimeMillis() > miniGameCompletionTime + 7000){
+//                    sendMessage("soyuzDockingSuccessful");
+//                    animationState = AnimationStateVisit;
+//                }
+//            }
+        }
+
         
         
         ofPopMatrix();
@@ -341,6 +552,15 @@ void ApolloSoyuz::draw(){
     else if (animationState == AnimationStateReEntry){
         ofDrawBitmapString("Re-entry", 20,20);
     }
+    else if (animationState == AnimationStateAirFailure)
+        ofDrawBitmapString("PROBLEM", 20,20);
+    else if (animationState == AnimationStateSafeReEntry)
+        ofDrawBitmapString("safe again", 20,20);
+    else if (animationState == AnimationStateSplashDown)
+        ofDrawBitmapString("Splash Down", 20,20);
+}
+
+void ApolloSoyuz::drawPuzzle(){
     
 }
 
@@ -429,7 +649,7 @@ void ApolloSoyuz::update(){
     }
     
     else if(animationState == AnimationStateSpinAfterLaunch){
-        if(ofGetElapsedTimeMillis() > sceneBeginTime + 4000){  // 40000
+        if(ofGetElapsedTimeMillis() > sceneBeginTime + 40000){  // 40000
             animationState = AnimationStateDockingAirlock;
             sceneBeginTime = ofGetElapsedTimeMillis();
         }
@@ -450,12 +670,28 @@ void ApolloSoyuz::update(){
         // transition by sendMessage "undockAndReEntry"
     }
     else if (animationState == AnimationStateUndocking){
-        if(ofGetElapsedTimeMillis() > sceneBeginTime + 4000){
+        if(ofGetElapsedTimeMillis() > sceneBeginTime + 12000){
             animationState = AnimationStateReEntry;
             sceneBeginTime = ofGetElapsedTimeMillis();
         }
     }
     else if (animationState == AnimationStateReEntry){
+        if(ofGetElapsedTimeMillis() > sceneBeginTime + 8000){
+            animationState = AnimationStateAirFailure;
+            sceneBeginTime = ofGetElapsedTimeMillis();
+        }
+    }
+    else if (animationState == AnimationStateAirFailure){
+        // transition by sendMessage "airFailureRepaired"
+    }
+    else if (animationState == AnimationStateSafeReEntry){
+        if(ofGetElapsedTimeMillis() > sceneBeginTime + 8000){
+            animationState = AnimationStateSplashDown;
+            sceneBeginTime = ofGetElapsedTimeMillis();
+        }
+    }
+    else if (animationState == AnimationStateSplashDown){
+        
     }
 }
 
@@ -495,13 +731,18 @@ void ApolloSoyuz::touchDown(ofTouchEventArgs &touch){
             sendMessage("goForLaunch");
         }
         if(animationState == AnimationStateDockingAirlock){
-            //            sendMessage("airlockDockingSuccessful");
+//            sendMessage("airlockDockingSuccessful");
         }
         if(animationState == AnimationStateApproach){
-            sendMessage("soyuzDockingSuccessful");
+//            sendMessage("soyuzDockingSuccessful");
         }
         if(animationState == AnimationStateVisit){
             sendMessage("undockAndReEntry");
+        }
+        if(animationState == AnimationStateAirFailure){
+            if(failStage == 0)
+                failStage++;
+//            sendMessage("airFailureRepaired");
         }
     }
 }
@@ -555,6 +796,11 @@ void ApolloSoyuz::updateTCP() {
                         sceneBeginTime = ofGetElapsedTimeMillis();
                         sendMessage("undockAndReEntry");
                     }
+                    else if (strcmp(cMessage, "airFailureRepaired") == 0) {
+                        animationState = AnimationStateSafeReEntry;
+                        sceneBeginTime = ofGetElapsedTimeMillis();
+                        sendMessage("airFailureRepaired");
+                    }
                     else{
                     }
                 }
@@ -562,27 +808,27 @@ void ApolloSoyuz::updateTCP() {
 	    }
 	}
     
-    //    else if(isClient){
-    //        if(client.send(msgTx)){
-    //
-    //            //if data has been sent lets update our text
-    //            string str = tcpClient.receive();
-    //            if( str.length() > 0 ){
-    //                msgRx = str;
-    //            }
-    //        }else if(!tcpClient.isConnected()){
-    //            weConnected = false;
-    //        }
-    //    }else{
-    //        //if we are not connected lets try and reconnect every 5 seconds
-    //        deltaTime = ofGetElapsedTimeMillis() - connectTime;
-    //
-    //        if( deltaTime > 5000 ){
-    //            weConnected = tcpClient.setup("127.0.0.1", 11999);
-    //            connectTime = ofGetElapsedTimeMillis();
-    //        }
-    //
-    //    }
+//    else if(isClient){
+//        if(client.send(msgTx)){
+//
+//            //if data has been sent lets update our text
+//            string str = tcpClient.receive();
+//            if( str.length() > 0 ){
+//                msgRx = str;
+//            }
+//        }else if(!tcpClient.isConnected()){
+//            weConnected = false;
+//        }
+//    }else{
+//        //if we are not connected lets try and reconnect every 5 seconds
+//        deltaTime = ofGetElapsedTimeMillis() - connectTime;
+//
+//        if( deltaTime > 5000 ){
+//            weConnected = tcpClient.setup("127.0.0.1", 11999);
+//            connectTime = ofGetElapsedTimeMillis();
+//        }
+//
+//    }
     
     else if (isClient){
         
@@ -592,14 +838,14 @@ void ApolloSoyuz::updateTCP() {
     		programState = ProgramStateDisconnected;
     		return;
     	}
-        //        else{
-        //            //if we are not connected lets try and reconnect every 5 seconds
-        //            deltaTime = ofGetElapsedTimeMillis() - connectTime;
-        //            if( deltaTime > 5000 ){
-        //                weConnected = tcpClient.setup("127.0.0.1", 11999);
-        //                connectTime = ofGetElapsedTimeMillis();
-        //            }
-        //        }
+//        else{
+//            //if we are not connected lets try and reconnect every 5 seconds
+//            deltaTime = ofGetElapsedTimeMillis() - connectTime;
+//            if( deltaTime > 5000 ){
+//                weConnected = tcpClient.setup("127.0.0.1", 11999);
+//                connectTime = ofGetElapsedTimeMillis();
+//            }
+//        }
         
         string str = client.receive();
         
@@ -625,6 +871,10 @@ void ApolloSoyuz::updateTCP() {
             }
             else if (strcmp(cMessage, "undockAndReEntry") == 0) {
                 animationState = AnimationStateUndocking;
+                sceneBeginTime = ofGetElapsedTimeMillis();
+            }
+            else if (strcmp(cMessage, "airFailureRepaired") == 0){
+                animationState = AnimationStateSafeReEntry;
                 sceneBeginTime = ofGetElapsedTimeMillis();
             }
             else {

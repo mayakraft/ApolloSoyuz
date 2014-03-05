@@ -23,7 +23,10 @@ typedef enum
     AnimationStateApproach,
     AnimationStateVisit,
     AnimationStateUndocking,
-    AnimationStateReEntry
+    AnimationStateReEntry,
+    AnimationStateAirFailure,
+    AnimationStateSafeReEntry,
+    AnimationStateSplashDown
 }
 AnimationState;
 
@@ -91,6 +94,7 @@ private:
     ofTexture groundTexture;
     ofTexture earthTexture;
     ofTexture s4bTexture;
+    ofTexture soyuzTexture;
     
     ofTexture cloud1, cloud2, cloud3;
     
@@ -122,8 +126,11 @@ private:
     int miniGameDocking1Score;
     long miniGameCompletionTime;
     
-    void drawControls();
     
+    void drawControls();
+    void drawPuzzle();
+    //final minigame
+    int failStage;
 };
 
 #endif /* defined(__ApolloSoyuz__ApolloSoyuz__) */
