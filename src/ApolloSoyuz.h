@@ -9,7 +9,9 @@
 #ifndef __ApolloSoyuz__ApolloSoyuz__
 #define __ApolloSoyuz__ApolloSoyuz__
 
-#define PORT 11999
+#include <iostream>
+#include "ofMain.h"
+#include "ofxNetwork.h"
 
 typedef enum
 {
@@ -32,105 +34,110 @@ AnimationState;
 
 typedef enum
 {
-    ProgramStateDisconnected,
-    ProgramStateWaiting,
-    ProgramStateRunning
+    NetworkStateDisconnected,
+    NetworkStateConnected
 }
-ProgramState;
+NetworkState;
 
-#include <iostream>
-#include "ofMain.h"
-#include "ofxNetwork.h"
+
+#define PORT 11999
+
 
 class ApolloSoyuz {
+
+// roles:
+// 0: server, left window  (desktop)
+// 1: client, right window  (desktop)
+// 2: client, front panel (iPad)
+// 3: client, aux window (iPod/iPhone)
     
 public:
-    // roles:
-    // 0: server, left window  (desktop)
-    // 1: client, right window  (desktop)
-    // 2: client, front panel (iPad)
-    // 3: client, side panel 1 (iPod/iPhone)
-    // 4: client, side panel 2 (iPod/iPhone)
-    
+
     void setup(int role);
     void update();
     void draw();
     
-    // desktop
+    // DESKTOP
     void keyPressed(int key);
-    //    void keyReleased(int key);
-    //    void windowResized(int w, int h);
-    // desktop
     
-    // mobile
+    // MOBILE
     void touchDown(ofTouchEventArgs & touch);
-    //    void touchMoved(ofTouchEventArgs & touch);
     void touchUp(ofTouchEventArgs & touch);
-    //    void touchDoubleTap(ofTouchEventArgs & touch);
-    //    void touchCancelled(ofTouchEventArgs & touch);
-    // mobile
     
 private:
+    
+    // NETWORK
+
+    NetworkState networkState;
     ofxTCPServer server;
 	ofxTCPClient client;
-    
     bool isClient = false;
     bool isServer = false;
-    
     void updateTCP();
-    void updateSlowTCP();
-    int oneSecond; // track updateSlowTCP()
-    
     void sendMessage(string message);   // if client, send to server.  if server, send to all clients
     string msgTx;
     string msgRx;  // last message received
     char cMessage[128];
     
-    // gfx
+    // GRAPHICS
     
+    // roles 0, 1, 3
     ofCamera camera;
-    
-    ofTexture skyTexture;
     ofTexture groundTexture;
     ofTexture earthTexture;
     ofTexture s4bTexture;
     ofTexture soyuzTexture;
-    
     ofTexture cloud1, cloud2, cloud3;
+    bool fullScreen = false;
+    // role 2
+    ofCylinderPrimitive cylinder;
+    ofIcoSpherePrimitive icoSphere;
+    ofConePrimitive cone;
     
-    // script
+    // SCRIPT
     
-    ProgramState programState;
     AnimationState animationState;
-    
+    int role;
+    long sceneTransition[14];
     long animationStartTime;
     long sceneBeginTime;
-    int role;
-    
     void beginAnimation();
+    void resetForNewRound();
     
-    // desktop only
-    bool fullScreen = false;
+    // MINIGAMES
     
-    // role 2
     bool controlLeft, controlRight, controlUp, controlDown, controlForward, controlReverse;
-    
-    //minigames
     float position[3];
     float velocity[3];
     float acceleration[3];
-    ofCylinderPrimitive cylinder;
-    ofIcoSpherePrimitive icoSphere;
-    void drawTimer(int centerX, int centerY, float roundProgress);
-    bool miniGameDocking1Complete;
+    bool miniGameDockingComplete;
     int miniGameDocking1Score;
     long miniGameCompletionTime;
-    
-    
     void drawControls();
-    void drawPuzzle();
-    //final minigame
+    void drawTimer(int centerX, int centerY, float roundProgress);
     int failStage;
+    
+    // SOUNDS
+    
+    void updateSounds();
+    ofSoundPlayer gonogo;
+    ofSoundPlayer tenSeconds;
+    ofSoundPlayer launch;
+    ofSoundPlayer rollPitch;
+    ofSoundPlayer splashDown;
+    ofSoundPlayer soyuzOrbit;
+    ofSoundPlayer lookingFine;
+    ofSoundPlayer alarmSound;
+    ofSoundPlayer launchComplete;
+    ofSoundPlayer goForDocking;
+    ofSoundPlayer contactSound;
+    ofSoundPlayer goForUndock;
+    ofSoundPlayer deorbitBurn;
+    ofSoundPlayer applause;
+    ofSoundPlayer reEntrySound;
+    ofSoundPlayer docking1Sound;
+    const static int NUM_SOUNDS = 20;
+    bool soundsHavePlayed[NUM_SOUNDS];
 };
 
 #endif /* defined(__ApolloSoyuz__ApolloSoyuz__) */
