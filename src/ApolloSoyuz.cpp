@@ -12,41 +12,33 @@ void ApolloSoyuz::setup(int r){
 
     role = r;
     
-    networkState = NetworkStateDisconnected;
-    animationState = AnimationStateNotStarted;
-    
-    //	ofSetVerticalSync(true);  // limits update() calls to 60/sec (?)
+//    ofSetVerticalSync(true);  // limits update() calls to 60/sec (?)
     
     // NETWORK
     
-    if(role == 0){  // server is built into role. TODO- separate these
-        server.setup(PORT);
-        isServer = true;
-        networkState = NetworkStateConnected;
-        server.setMessageDelimiter("\n");
-    }
-    else{  // client
-        msgTx	= "";
-        msgRx	= "";
-        if( client.setup("169.254.153.53", PORT) ){
-            isClient = true;
-            networkState = NetworkStateConnected;
-            client.setMessageDelimiter("\n");
-        }
-    }
+    networkState = NetworkStateDisconnected;
+    updateConnection(true);
     
     // GRAPHICS
     
-    camera.setPosition(0.0f, 0.0f, 0.0f);
-    // correlate each window's position in the simulator to a direction in the 3D world
-//    if(role == 0)
-//        camera.lookAt(ofVec3f(0.0f, 0.0f, 10.0f));
-//    else if (role == 1)
-//        camera.lookAt(ofVec3f(0.0f, 0.0f, -10.0f));
-    camera.lookAt(ofVec3f(0.0f, 0.0f, 10.0f));
+    if(role == 2){
+        cylinder.set(50, 200, 48, 48);
+        cylinder.rotate(90, 1, 0, 0);
+        icoSphere.setRadius(66);
+        cone.set(50, 50, 40, 40);
+        cone.rotate(90, 1, 0, 0);
+    }
+    else{
+        camera.setPosition(0.0f, 0.0f, 0.0f);
+        // correlate each window's position in the simulator to a direction in the 3D world
+//        if(role == 0)
+//            camera.lookAt(ofVec3f(0.0f, 0.0f, 10.0f));
+//        else if (role == 1)
+//            camera.lookAt(ofVec3f(0.0f, 0.0f, -10.0f));
+//        else
+//            camera.lookAt(ofVec3f(0.0f, 10.0f, 1.0f));
+        camera.lookAt(ofVec3f(0.0f, 0.0f, 10.0f));
 
-    
-    if(role == 0 || role == 1 || role == 3){
         ofLoadImage(cloud1, "cloud1.png");
         cloud1.setAnchorPercent(0.5, 0.5);
         ofLoadImage(cloud2, "cloud2.png");
@@ -61,8 +53,9 @@ void ApolloSoyuz::setup(int r){
         soyuzTexture.setAnchorPercent(0.5f, 0.5f);
     }
     
-    // sounds
-    if(role == 0){
+    // SOUNDS
+    
+    if(role == SOUND_ROLE){
         for(int i = 0; i < NUM_SOUNDS; i++)
             soundsHavePlayed[i] = false;
         gonogo.loadSound("gonogo.mp3");
@@ -86,13 +79,7 @@ void ApolloSoyuz::setup(int r){
         docking1Sound.loadSound("docking1.mp3");
     }
     
-    if(role == 2){
-        cylinder.set(50, 200, 48, 48);
-        cylinder.rotate(90, 1, 0, 0);
-        icoSphere.setRadius(66);
-        cone.set(50, 50, 40, 40);
-        cone.rotate(90, 1, 0, 0);
-    }
+    // ANIMATION
     
     // scene transition times
     sceneTransition[AnimationStateNotStarted] = 0;      // transition by sendMessage "animationBegin"
@@ -108,25 +95,34 @@ void ApolloSoyuz::setup(int r){
     sceneTransition[AnimationStateReEntry] = 8000;
     sceneTransition[AnimationStateAirFailure] = 0;      // transition by sendMessage "airFailureRepaired"
     sceneTransition[AnimationStateSafeReEntry] = 8000;
-    sceneTransition[AnimationStateSplashDown] = 0;      // end of play, reset triggered by sendMessage "animationBegin"
+    sceneTransition[AnimationStateSplashDown] = 15000;      // end of play, reset triggered by sendMessage "animationBegin"
+    
+    // setup variables which require resetting each round
+    setupAnimation();
 }
 
 void ApolloSoyuz::update(){
+    
     updateTCP();
+    
+    updateConnection(false);
     
     // if sceneTransition time is 0, transition must be triggered by an event, not time
     if(sceneTransition[animationState] && ofGetElapsedTimeMillis() > sceneBeginTime + sceneTransition[animationState]){
         animationState++;
         sceneBeginTime = ofGetElapsedTimeMillis();
+        // reset animation
+        if(animationState > AnimationStateSplashDown)
+            setupAnimation();
     }
     
-    if(role == 0)
+    if(role == SOUND_ROLE)
         updateSounds();
 }
 
 void ApolloSoyuz::draw(){
     
-    if(role == 0 || role == 1 || role == 3){
+    if(role != 2){
         
         // clear screen
         // blue sky
@@ -144,7 +140,7 @@ void ApolloSoyuz::draw(){
                 easeIn = 1.0;
             int rand = ofRandom(0, 255);
             ofClear(255*easeIn, rand*easeIn, 0);
-            if(role == 0)
+            if(role == SOUND_ROLE)
                 reEntrySound.setVolume(easeIn);
         }
         else if (animationState == AnimationStateAirFailure){
@@ -161,7 +157,7 @@ void ApolloSoyuz::draw(){
             int g = 160*easeIn + rand * (1-easeIn);
             int b = 192*easeIn;
             ofClear(r, g, b);
-            if(role == 0)
+            if(role == SOUND_ROLE)
                 reEntrySound.setVolume(1-easeIn);
         }
         // launching fade to black
@@ -505,10 +501,18 @@ void ApolloSoyuz::draw(){
         ofPopMatrix();
     }
     
-    // scene location for debugging
     
-    if(animationState == AnimationStateEnteringCapsule)
-        ofDrawBitmapString("On the launch pad", 20, 20);
+    // DEBUGGING
+    if(animationState == AnimationStateNotStarted){
+        string networkString;
+        if(networkState == NetworkStateConnected)
+            networkString = "connected";
+        else
+            networkString = "not connected";
+        ofDrawBitmapString(networkString, 20, 20);
+    }
+//    if(animationState == AnimationStateEnteringCapsule)
+//        ofDrawBitmapString("On the launch pad", 20, 20);
 //    if(animationState == AnimationStateReadyForLaunch)
 //        ofDrawBitmapString("ready for launch", 20,20);
 //    else if(animationState == AnimationStateLaunching)
@@ -587,8 +591,9 @@ void ApolloSoyuz::drawTimer(int centerX, int centerY, float roundProgress){
     ofNoFill();
 }
 
-void ApolloSoyuz::resetForNewRound(){
-    if(role == 0){
+void ApolloSoyuz::setupAnimation(){
+    animationState = AnimationStateNotStarted;
+    if(role == SOUND_ROLE){
         for(int i = 0; i < NUM_SOUNDS; i++)
             soundsHavePlayed[i] = false;
     }
@@ -596,11 +601,66 @@ void ApolloSoyuz::resetForNewRound(){
 }
 
 void ApolloSoyuz::beginAnimation(){
-    sendMessage("animationBegin");
-    resetForNewRound();
+    setupAnimation();  // redundant, but required here in case we reset in the middle of animation
     animationStartTime = ofGetElapsedTimeMillis();
     animationState = AnimationStateEnteringCapsule;
     sceneBeginTime = ofGetElapsedTimeMillis();
+}
+
+void ApolloSoyuz::updateConnection(bool immediately){
+    // once every 10 seconds
+    static bool called = false;
+    if(!immediately){
+        if(ofGetSeconds() % 10 == 0){
+            if(called) return;
+            called = true;
+        }
+        else{
+            if(called) called = false;
+            return;
+        }
+    }
+    // if think there's a connection but no actual connection, update to false
+    if(networkState == NetworkStateConnected){
+        if(isServer && !server.isConnected()){
+			isServer = false;
+            networkState = NetworkStateDisconnected;
+		}
+        if(isClient && !client.isConnected()){
+			isClient = false;
+            networkState = NetworkStateDisconnected;
+		}
+    }
+    // if think there isn't a connection but there is, update to true
+    // if no connection, attempt a re-connection
+    if(networkState == NetworkStateDisconnected){
+        if(role == SERVER_ROLE){
+            if(server.isConnected()){
+                isServer = true;
+                networkState = NetworkStateConnected;
+            }
+            else{
+                isServer = server.setup(PORT);
+                if(isServer){
+                    networkState = NetworkStateConnected;
+                    server.setMessageDelimiter("\n");
+                }
+            }
+        }
+        else{  // client
+            if(client.isConnected()){
+                isClient = true;
+                networkState = NetworkStateConnected;
+            }
+            else{
+                isClient = client.setup(SERVER_IP, PORT);
+                if(isClient){
+                    networkState = NetworkStateConnected;
+                    client.setMessageDelimiter("\n");
+                }
+            }
+        }
+    }
 }
 
 void ApolloSoyuz::updateTCP() {
@@ -667,10 +727,7 @@ void ApolloSoyuz::updateTCP() {
 	    	ofLogNotice("TCP") << "Received From Server: " + str;
             strcpy( cMessage, str.c_str() );
             if (strcmp(cMessage, "animationBegin") == 0) {
-                resetForNewRound();
-                animationStartTime = ofGetElapsedTimeMillis();
-                animationState = AnimationStateEnteringCapsule;
-                sceneBeginTime = ofGetElapsedTimeMillis();
+                beginAnimation();
             }
             else if (strcmp(cMessage, "goForLaunch") == 0) {
                 animationState = AnimationStateReadyForLaunch;
@@ -795,13 +852,19 @@ void ApolloSoyuz::sendMessage(string message){
 void ApolloSoyuz::keyPressed(int key){
     printf("%d\n",key);
     if(key == 32){  // space bar starts animation
-        if(isServer && ( animationState == AnimationStateNotStarted || animationState == AnimationStateSplashDown ) ){
+        if(isServer && ( animationState == AnimationStateNotStarted) ){
+            sendMessage("animationBegin");
             beginAnimation();
         }
     }
     if (key == 102 || key == 70){
         fullScreen = !fullScreen;
         ofSetFullscreen(fullScreen);
+    }
+    if( key == 88 || key == 120){
+        animationState++;
+        if(animationState > AnimationStateSplashDown)
+            setupAnimation();
     }
 }
 

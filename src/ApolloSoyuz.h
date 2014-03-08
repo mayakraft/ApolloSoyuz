@@ -39,17 +39,30 @@ typedef enum
 }
 NetworkState;
 
-
+#define SERVER_IP "169.254.153.53"
 #define PORT 11999
 
+// which computer is host to network and sound
+#define SERVER_ROLE 0
+#define SOUND_ROLE 0
 
 class ApolloSoyuz {
 
-// roles:
-// 0: server, left window  (desktop)
-// 1: client, right window  (desktop)
-// 2: client, front panel (iPad)
-// 3: client, aux window (iPod/iPhone)
+// ROLES:
+//
+// 0: left window  (desktop)
+// 1: right window  (desktop)
+// 2: front panel (iPad)
+// 3: aux window (iPod/iPhone)
+//
+// SERVER_ROLE: which computer is also the server, all others should be connected to it's hosted WIFI spot
+// SOUND_ROLE: which computer is plugged into the speaker
+//
+    
+// CONTROLS:
+// spacebar: begin animation
+// f: full screen
+// x: skip scene
     
 public:
 
@@ -73,10 +86,11 @@ private:
 	ofxTCPClient client;
     bool isClient = false;
     bool isServer = false;
+    void updateConnection(bool immediately);  //because it's in update() loop, hard coded for once/10 seconds, or set immediately=true to force a call
     void updateTCP();
     void sendMessage(string message);   // if client, send to server.  if server, send to all clients
-    string msgTx;
-    string msgRx;  // last message received
+    string msgTx = "";
+    string msgRx = "";  // last message received
     char cMessage[128];
     
     // GRAPHICS
@@ -102,7 +116,7 @@ private:
     long animationStartTime;
     long sceneBeginTime;
     void beginAnimation();
-    void resetForNewRound();
+    void setupAnimation();
     
     // MINIGAMES
     
