@@ -81,7 +81,7 @@ private:
     
     // NETWORK
 
-    NetworkState networkState;
+    NetworkState networkState = NetworkStateDisconnected;
     ofxTCPServer server;
 	ofxTCPClient client;
     bool isClient = false;
@@ -110,7 +110,7 @@ private:
     
     // SCRIPT
     
-    AnimationState animationState;
+    AnimationState animationState = AnimationStateNotStarted;
     int role;
     long sceneTransition[14];
     long animationStartTime;
